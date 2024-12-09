@@ -2,10 +2,7 @@ package com.murugappan.controller;
 
 import com.murugappan.dto.ResponseDto;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -18,6 +15,7 @@ import static java.time.Instant.*;
 
 @RestController
 @RequestMapping("/api")
+@CrossOrigin(origins = "*")
 public class TimestampController {
 
     @GetMapping("/{date}")
