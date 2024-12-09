@@ -61,7 +61,7 @@ public class TimestampController {
         } catch (Exception e) {
             System.out.println("Invalid Date: " + date);
             response.put("error", "Invalid Date");
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.ok().body(response);
         }
     }
 }
