@@ -64,4 +64,16 @@ public class TimestampController {
             return ResponseEntity.ok().body(response);
         }
     }
+    @GetMapping
+    public ResponseEntity<?> currentTimeStamp() {
+        DateTimeFormatter utcFormatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'")
+                .withZone(ZoneId.of("UTC"));
+        Map<String, Object> response = new HashMap<>();
+
+        Instant now = Instant.now();
+        response.put("unix", now.toEpochMilli());
+        response.put("utc", utcFormatter.format(now));
+
+        return ResponseEntity.ok(response);
+    }
 }
