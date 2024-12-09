@@ -2,49 +2,64 @@ package com.murugappan.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import org.springframework.web.bind.annotation.CrossOrigin;
+
+import java.time.*;
+import java.time.format.*;
 import java.util.*;
 
 @RestController
 @RequestMapping("/api")
+@CrossOrigin(origins = "*") // Allow all origins
 public class TimestampController {
 
     @GetMapping("/{date}")
     public ResponseEntity<?> timeStamp(@PathVariable(required = false) String date) {
+        DateTimeFormatter utcFormatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'")
+                .withZone(ZoneOffset.UTC);
+
         try {
             Map<String, Object> response = new HashMap<>();
-            SimpleDateFormat utcFormatter = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'");
-            utcFormatter.setTimeZone(TimeZone.getTimeZone("GMT"));
 
             if (date == null || date.isEmpty()) {
-                Date now = new Date();
-                response.put("unix", now.getTime());
+                // Handle empty date -> current time
+                Instant now = Instant.now();
+                response.put("unix", now.toEpochMilli());
                 response.put("utc", utcFormatter.format(now));
                 return ResponseEntity.ok(response);
             }
 
+            // Handle numeric timestamps
             if (date.matches("\\d+")) {
-                // Handle numeric timestamp
                 long timestamp = Long.parseLong(date);
-                Date dateObj = new Date(timestamp);
+                Instant instant = Instant.ofEpochMilli(timestamp);
                 response.put("unix", timestamp);
-                response.put("utc", utcFormatter.format(dateObj));
+                response.put("utc", utcFormatter.format(instant));
                 return ResponseEntity.ok(response);
             }
-            SimpleDateFormat inputFormatter = new SimpleDateFormat("dd MMMM yyyy, z");
-            Date parsedDate;
-            try {
-                parsedDate = inputFormatter.parse(date);
-            } catch (ParseException ex) {
-                inputFormatter = new SimpleDateFormat("dd MMMM yyyy");
-                parsedDate = inputFormatter.parse(date);
-            }
-            response.put("unix", parsedDate.getTime());
-            response.put("utc", utcFormatter.format(parsedDate));
-            return ResponseEntity.ok(response);
 
+            // Handle natural language dates and other formats
+            try {
+                // Parse using ZonedDateTime for flexible formats
+                ZonedDateTime parsedDate = ZonedDateTime.parse(date, DateTimeFormatter.ofPattern("dd MMMM yyyy[, zzzz]")
+                        .withZone(ZoneId.of("GMT")));
+                response.put("unix", parsedDate.toInstant().toEpochMilli());
+                response.put("utc", utcFormatter.format(parsedDate.toInstant()));
+                return ResponseEntity.ok(response);
+            } catch (DateTimeParseException ignored) {
+                // Try with LocalDate
+                try {
+                    LocalDate localDate = LocalDate.parse(date, DateTimeFormatter.ISO_LOCAL_DATE);
+                    Instant instant = localDate.atStartOfDay(ZoneOffset.UTC).toInstant();
+                    response.put("unix", instant.toEpochMilli());
+                    response.put("utc", utcFormatter.format(instant));
+                    return ResponseEntity.ok(response);
+                } catch (DateTimeParseException e) {
+                    throw new IllegalArgumentException("Invalid Date");
+                }
+            }
         } catch (Exception e) {
+            // Handle invalid date
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", "Invalid Date");
             return ResponseEntity.badRequest().body(errorResponse);
