@@ -1,50 +1,47 @@
 package com.murugappan.controller;
 
-import com.murugappan.dto.ResponseDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
-
-import static java.time.Instant.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*")
 public class TimestampController {
 
     @GetMapping("/{date}")
     public ResponseEntity<?> timeStamp(@PathVariable(required = false) String date) {
-        ResponseDto response = new ResponseDto();
-        DateTimeFormatter utcFormatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'")
-                .withZone(java.time.ZoneOffset.UTC);
-
         try {
+            Map<String, Object> response = new HashMap<>();
+            SimpleDateFormat utcFormatter = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'");
+            utcFormatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+
             if (date == null || date.isEmpty()) {
-                Instant now = now();
-                response.setUnix(now.toEpochMilli());
-                response.setUtc(utcFormatter.format(now));
+                Date now = new Date();
+                response.put("unix", now.getTime());
+                response.put("utc", utcFormatter.format(now));
                 return ResponseEntity.ok(response);
             }
 
             if (date.matches("\\d+")) {
+                // Handle numeric timestamp
                 long timestamp = Long.parseLong(date);
-                Instant instant = ofEpochMilli(timestamp);
-                response.setUnix(timestamp);
-                response.setUtc(utcFormatter.format(instant));
+                Date dateObj = new Date(timestamp);
+                response.put("unix", timestamp);
+                response.put("utc", utcFormatter.format(dateObj));
                 return ResponseEntity.ok(response);
             }
-
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            LocalDate parsedDate = LocalDate.parse(date, formatter);
-            response.setUnix(parsedDate.atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000);
-            response.setUtc(utcFormatter.format(parsedDate.atStartOfDay(ZoneOffset.UTC)));
-
+            SimpleDateFormat inputFormatter = new SimpleDateFormat("dd MMMM yyyy, z");
+            Date parsedDate;
+            try {
+                parsedDate = inputFormatter.parse(date);
+            } catch (ParseException ex) {
+                inputFormatter = new SimpleDateFormat("dd MMMM yyyy");
+                parsedDate = inputFormatter.parse(date);
+            }
+            response.put("unix", parsedDate.getTime());
+            response.put("utc", utcFormatter.format(parsedDate));
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
