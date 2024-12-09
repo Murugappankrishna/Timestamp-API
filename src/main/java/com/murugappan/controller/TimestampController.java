@@ -22,8 +22,8 @@ public class TimestampController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            // Handle numeric timestamps
             if (date.matches("\\d+")) {
+                System.out.println( "Line 26"+date);
                 long timestamp = Long.parseLong(date);
                 Instant instant = Instant.ofEpochMilli(timestamp);
                 response.put("unix", timestamp);
@@ -31,16 +31,16 @@ public class TimestampController {
                 return ResponseEntity.ok(response);
             }
 
-            // Handle ISO-8601 (yyyy-MM-dd) or natural language date
             try {
+                System.out.println( "Line 35"+date);
                 LocalDate localDate = LocalDate.parse(date);
                 Instant instant = localDate.atStartOfDay(ZoneId.of("UTC")).toInstant();
                 response.put("unix", instant.toEpochMilli());
                 response.put("utc", utcFormatter.format(instant));
                 return ResponseEntity.ok(response);
             } catch (Exception e) {
-                // Attempt to parse a natural language date format
                 try {
+                    System.out.println( "Line 43"+date);
                     Instant instant = Instant.parse(date);
                     response.put("unix", instant.toEpochMilli());
                     response.put("utc", utcFormatter.format(instant));
